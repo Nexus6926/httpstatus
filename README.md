@@ -19,6 +19,7 @@ The script will create a file in the "outputs" folder for each status code, and 
 Check the HTTP status codes of the URLs in urls.txt and write the results to `output.txt`:
 
 ```
+
 httpstatus -dL subdomains.txt
 ```
 
