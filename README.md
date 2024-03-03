@@ -6,9 +6,9 @@ This tool is a command-line tool that checks the HTTP status codes of a list of 
 - go-lang
 
 ### Usage
-httpstatus -dL <file.txt>
-```
 
+```
+httpstatus -dL <file.txt>
 ### Input File
 The input file should be a text file with one URL per line.
 
