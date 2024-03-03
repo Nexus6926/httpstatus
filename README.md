@@ -20,6 +20,8 @@ Check the HTTP status codes of the URLs in urls.txt and write the results to `ou
 
 ```
 
-httpstatus -dL subdomains.txt
-```
 
+```
+httpstatus -dL subdomains.txt
+
+```
