@@ -9,6 +9,7 @@ This tool is a command-line tool that checks the HTTP status codes of a list of 
 
 ```
 httpstatus -dL <file.txt>
+
 ### Input File
 The input file should be a text file with one URL per line.
 
@@ -18,10 +19,6 @@ The script will create a file in the "outputs" folder for each status code, and 
 ### Examples
 Check the HTTP status codes of the URLs in urls.txt and write the results to `output.txt`:
 
-```
-
-
-```
 httpstatus -dL subdomains.txt
 
 ```
