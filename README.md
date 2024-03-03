@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # HTTP Status Checker
 This tool is a command-line tool that checks the HTTP status codes of a list of URLs and outputs the results to the terminal and a set of files in an "outputs" folder.
 
