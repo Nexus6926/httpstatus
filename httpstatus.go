@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -43,22 +44,35 @@ func main() {
 			url = "http://" + url
 		}
 
-		resp, err := http.Get(url)
-		if err != nil {
-			fmt.Printf("Error fetching %s: %v\n", url, err)
-			saveURLToFile(outputFolder+"/000.txt", url)
-			continue
-		}
-		defer resp.Body.Close()
+		for {
+			err := fetchAndSaveURL(url, outputFolder)
+			if err == nil {
+				break // If fetched successfully, move to the next URL
+			}
 
-		fileName := fmt.Sprintf("%s/urls_%03d.txt", outputFolder, resp.StatusCode)
-		saveURLToFile(fileName, url)
+			fmt.Printf("Error fetching %s: %v\n", url, err)
+			fmt.Println("Pausing for 10 seconds before retrying...")
+			time.Sleep(10 * time.Second) // Pause for 10 seconds before retrying
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
+}
+
+func fetchAndSaveURL(url, outputFolder string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err // Return the error if unable to fetch URL
+	}
+	defer resp.Body.Close()
+
+	fileName := fmt.Sprintf("%s/urls_%03d.txt", outputFolder, resp.StatusCode)
+	saveURLToFile(fileName, url)
+
+	return nil
 }
 
 func saveURLToFile(fileName, url string) {
