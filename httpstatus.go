@@ -50,9 +50,9 @@ func main() {
 				break // If fetched successfully, move to the next URL
 			}
 
-			fmt.Printf("Error fetching %s: %v\n", url, err)
-			fmt.Println("Pausing for 10 seconds before retrying...")
-			time.Sleep(10 * time.Second) // Pause for 10 seconds before retrying
+			fmt.Printf("Error fetching url: %v\n", err)
+			fmt.Println("Pausing for 5 seconds before retrying...")
+			time.Sleep(5 * time.Second) // Pause for 5 seconds before retrying
 		}
 	}
 
