@@ -44,10 +44,19 @@ func main() {
 			url = "http://" + url
 		}
 
-		for {
+		retries := 0
+		for retries < 2 {
 			err := fetchAndSaveURL(url, outputFolder)
 			if err == nil {
 				break // If fetched successfully, move to the next URL
+			}
+
+			if strings.Contains(err.Error(), "lookup") && strings.Contains(err.Error(), "no such host") {
+				retries++
+				if retries == 2 {
+					fmt.Printf("Error fetching url after 2 retries: %v\n", err)
+					break
+				}
 			}
 
 			fmt.Printf("Error fetching url: %v\n", err)
