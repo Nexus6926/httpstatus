@@ -12,7 +12,14 @@ import (
 
 func main() {
 	filename := flag.String("dL", "", "Specify the file containing website URLs")
+	updateFlag := flag.Bool("up", false, "Update the script")
 	flag.Parse()
+
+	if *updateFlag {
+		fmt.Println("Updating script...")
+		// Code to update the script
+		return
+	}
 
 	if *filename == "" {
 		fmt.Println("Please provide a filename using the -dL flag")
@@ -44,24 +51,22 @@ func main() {
 			url = "http://" + url
 		}
 
-		retries := 0
-		for retries < 2 {
+		tries := 0
+		for tries < 2 {
 			err := fetchAndSaveURL(url, outputFolder)
 			if err == nil {
 				break // If fetched successfully, move to the next URL
 			}
 
-			if strings.Contains(err.Error(), "lookup") && strings.Contains(err.Error(), "no such host") {
-				retries++
-				if retries == 2 {
-					fmt.Printf("Error fetching url after 2 retries: %v\n", err)
-					break
-				}
+			if strings.Contains(err.Error(), "dial tcp: lookup") && strings.Contains(err.Error(), "no such host") {
+				fmt.Println("Skipping to next URL after 2 attempts due to DNS lookup error.")
+				break
 			}
 
 			fmt.Printf("Error fetching url: %v\n", err)
 			fmt.Println("Pausing for 5 seconds before retrying...")
 			time.Sleep(5 * time.Second) // Pause for 5 seconds before retrying
+			tries++
 		}
 	}
 
