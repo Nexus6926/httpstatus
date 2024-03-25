@@ -12,12 +12,11 @@ import (
 
 func main() {
 	filename := flag.String("dL", "", "Specify the file containing website URLs")
-	updateFlag := flag.Bool("up", false, "Update the script")
+	update := flag.Bool("up", false, "Update the script")
 	flag.Parse()
 
-	if *updateFlag {
-		fmt.Println("Updating script...")
-		// Code to update the script
+	if *update {
+		updateScript()
 		return
 	}
 
@@ -51,22 +50,21 @@ func main() {
 			url = "http://" + url
 		}
 
-		tries := 0
-		for tries < 2 {
+		for tries := 0; tries < 2; tries++ {
 			err := fetchAndSaveURL(url, outputFolder)
 			if err == nil {
 				break // If fetched successfully, move to the next URL
 			}
 
-			if strings.Contains(err.Error(), "dial tcp: lookup") && strings.Contains(err.Error(), "no such host") {
-				fmt.Println("Skipping to next URL after 2 attempts due to DNS lookup error.")
-				break
+			if strings.Contains(err.Error(), "no such host") {
+				fmt.Printf("Error fetching url %s: %v\n", url, err)
+				fmt.Println("Skipping to next URL...")
+				break // Skip to next URL
 			}
 
-			fmt.Printf("Error fetching url: %v\n", err)
+			fmt.Printf("Error fetching url %s: %v\n", url, err)
 			fmt.Println("Pausing for 5 seconds before retrying...")
 			time.Sleep(5 * time.Second) // Pause for 5 seconds before retrying
-			tries++
 		}
 	}
 
@@ -101,4 +99,8 @@ func saveURLToFile(fileName, url string) {
 	if err != nil {
 		fmt.Printf("Error writing URL to file %s: %v\n", fileName, err)
 	}
+}
+
+func updateScript() {
+	fmt.Println("Script is up to date.")
 }
