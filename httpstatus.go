@@ -11,6 +11,14 @@ import (
 	"time"
 )
 
+const (
+	numWorkers       = 20
+	requestTimeout   = 10 * time.Second
+	retryPause       = 2 * time.Second
+	maxRetries       = 2
+	outputFolderName = "output"
+)
+
 func main() {
 	filename := flag.String("dL", "", "Specify the file containing website URLs")
 	update := flag.Bool("up", false, "Update the script")
@@ -33,21 +41,20 @@ func main() {
 	}
 	defer file.Close()
 
-	outputFolder := "output"
-	if _, err := os.Stat(outputFolder); os.IsNotExist(err) {
-		err := os.Mkdir(outputFolder, 0755)
+	if _, err := os.Stat(outputFolderName); os.IsNotExist(err) {
+		err := os.Mkdir(outputFolderName, 0755)
 		if err != nil {
 			fmt.Println("Error creating output folder:", err)
 			return
 		}
 	}
 
+	urls := make(chan string, 1000)
 	var wg sync.WaitGroup
-	urls := make(chan string, 100) // Buffered channel to reduce blocking
 
-	for i := 0; i < 50; i++ { // Increase to 50 parallel workers
+	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
-		go worker(urls, outputFolder, &wg)
+		go worker(urls, &wg)
 	}
 
 	scanner := bufio.NewScanner(file)
@@ -68,39 +75,35 @@ func main() {
 	}
 }
 
-func worker(urls chan string, outputFolder string, wg *sync.WaitGroup) {
+func worker(urls chan string, wg *sync.WaitGroup) {
 	defer wg.Done()
+	client := &http.Client{Timeout: requestTimeout}
 
 	for url := range urls {
-		for tries := 0; tries < 2; tries++ {
-			err := fetchAndSaveURL(url, outputFolder)
+		for tries := 0; tries < maxRetries; tries++ {
+			err := fetchAndSaveURL(client, url)
 			if err == nil {
-				break // If fetched successfully, move to the next URL
+				break
 			}
-
 			if strings.Contains(err.Error(), "no such host") {
 				fmt.Printf("Error fetching url %s: %v\n", url, err)
-				fmt.Println("Skipping to next URL...")
-				break // Skip to next URL
+				break
 			}
-
 			fmt.Printf("Error fetching url %s: %v\n", url, err)
-			fmt.Println("Pausing for 1 second before retrying...")
-			time.Sleep(1 * time.Second) // Pause for 1 second before retrying
+			time.Sleep(retryPause)
 		}
 	}
 }
 
-func fetchAndSaveURL(url, outputFolder string) error {
-	resp, err := http.Get(url)
+func fetchAndSaveURL(client *http.Client, url string) error {
+	resp, err := client.Get(url)
 	if err != nil {
-		return err // Return the error if unable to fetch URL
+		return err
 	}
 	defer resp.Body.Close()
 
-	fileName := fmt.Sprintf("%s/urls_%03d.txt", outputFolder, resp.StatusCode)
+	fileName := fmt.Sprintf("%s/urls_%03d.txt", outputFolderName, resp.StatusCode)
 	saveURLToFile(fileName, url)
-
 	return nil
 }
 
