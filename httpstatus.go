@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -41,15 +42,36 @@ func main() {
 		}
 	}
 
-	scanner := bufio.NewScanner(file)
+	var wg sync.WaitGroup
+	urls := make(chan string, 100) // Buffered channel to reduce blocking
 
+	for i := 0; i < 50; i++ { // Increase to 50 parallel workers
+		wg.Add(1)
+		go worker(urls, outputFolder, &wg)
+	}
+
+	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		url := scanner.Text()
-
 		if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
 			url = "http://" + url
 		}
+		urls <- url
+	}
 
+	close(urls)
+	wg.Wait()
+
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+}
+
+func worker(urls chan string, outputFolder string, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	for url := range urls {
 		for tries := 0; tries < 2; tries++ {
 			err := fetchAndSaveURL(url, outputFolder)
 			if err == nil {
@@ -63,14 +85,9 @@ func main() {
 			}
 
 			fmt.Printf("Error fetching url %s: %v\n", url, err)
-			fmt.Println("Pausing for 5 seconds before retrying...")
-			time.Sleep(5 * time.Second) // Pause for 5 seconds before retrying
+			fmt.Println("Pausing for 1 second before retrying...")
+			time.Sleep(1 * time.Second) // Pause for 1 second before retrying
 		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		fmt.Println("Error:", err)
-		return
 	}
 }
 
